@@ -1,2 +1,8 @@
 
 notebooks/network.nnue
+
+train/lichess_db_standard_rated_2017-02.pgn
+
+.vscode/
+
+train/__pycache__/
