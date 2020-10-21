@@ -3,47 +3,37 @@
 import numpy as np
 import keras
 import chess
+import chess.pgn
+
+from halfkp import get_halfkp_indeces
 
 GAMES_PER_EPOCH = 1_000
 
-class DataGenerator(keras.utils.Sequence):
-  def __init__(self, pgn_file_path, batch_size=32):
-    'Initialization'
-    self.pgn_file_path = pgn_file_path
-    self.batch_size = batch_size
-    self.on_epoch_end()
-    self.pgn_file_offset = 0 # TODO: Randomize
+def gen(pgn_file_path):
+  with open(pgn_file_path) as pgn:
+    while True:
+      game = chess.pgn.read_game(pgn)
+      if not game:
+        break
 
-  def on_epoch_end(self):
-    'on_epoch_end'
+      result_header = game.headers['Result']
+      result_vals = [0, 0] # Result "values" for black and white
+      if result_header == '*':
+        continue
+      elif result_header == '1-0':
+        result_vals[0] = 1
+        result_vals[1] = 0
+      elif result_header == '0-1':
+        result_vals[0] = 0
+        result_vals[1] = 1
+      else:
+        result_vals[0] = 0
+        result_vals[1] = 0
 
-    self.Xs = []
-    self.ys = []
-
-    with open(self.pgn_file_path) as pgn:
-      pgn.seek(self.pgn_file_offset)
-      game_count = 0
-
-      while game_count < GAMES_PER_EPOCH:
-          game = chess.pgn.read_game(pgn)
-          if not game:
-            self.pgn_file_offset = 0
-            break
-
-          board = game.board()
-          for move in game.mainline_moves():
-            board.push(move)
-
-          game_count = game_count + 1
-
-      self.pgn_file_offset = pgn.tell()
-
-  def __len__(self):
-    'Denotes the number of batches per epoch'
-    return int(np.floor(len(self.Xs) / self.batch_size))
-
-  def __getitem__(self, batch_index):
-    'Generate one batch of data'
-    Xs = self.Xs[batch_index:batch_index+self.batch_size]
-    ys = self.ys[batch_index:batch_index+self.batch_size]
-    return Xs, ys
+      board = game.board()
+      for move in game.mainline_moves():
+        board.push(move)
+        X = get_halfkp_indeces(board)
+        turn_idx = 0 if board.turn == chess.WHITE else 1
+        y = result_vals[turn_idx]
+        yield {"input_1": X[0], "input_2": X[1]}, y

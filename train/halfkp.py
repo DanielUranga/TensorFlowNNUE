@@ -1,7 +1,7 @@
 import chess
 from enum import Enum
 from enum import IntFlag
-import tensorflow as tf
+import numpy as np
 
 SQUARE_NB = 64
 
@@ -51,16 +51,12 @@ def orient(is_white_pov: bool, sq: int):
 def make_halfkp_index(is_white_pov: bool, king_sq: int, sq: int, p: chess.Piece):
     return orient(is_white_pov, sq) + PieceSquare.from_piece(p, is_white_pov) + PieceSquare.END * king_sq
 
-# Returns SparseTensors
 def get_halfkp_indeces(board: chess.Board):
-    result = []
+    result = [np.zeros([41024]), np.zeros([41024])]
     for turn in [board.turn, not board.turn]:
-        indices = []
-        values = []
         for sq, p in board.piece_map().items():
             if p.piece_type == chess.KING:
                 continue
-            indices.append([0, make_halfkp_index(turn, orient(turn, board.king(turn)), sq, p)])
-            values.append(1)
-        result.append(tf.sparse.reorder(tf.sparse.SparseTensor(indices=indices, values=values, dense_shape=[1, 41024])))
+            turn_idx = 0 if turn == chess.WHITE else 1
+            result[turn_idx][make_halfkp_index(turn, orient(turn, board.king(turn)), sq, p)] = 1
     return result
