@@ -36,4 +36,4 @@ def gen(pgn_file_path):
         X = get_halfkp_indeces(board)
         turn_idx = 0 if board.turn == chess.WHITE else 1
         y = result_vals[turn_idx]
-        yield {"input_1": X[0], "input_2": X[1]}, y
+        yield (X[0], X[1]), y
