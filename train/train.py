@@ -8,6 +8,7 @@ import functools
 from enum import Enum
 from enum import IntFlag
 from datetime import datetime
+import random
 
 import tensorflow as tf
 from tensorflow import keras
@@ -46,7 +47,14 @@ def build_model():
   outputs = build_output_layer(build_hidden_layers(build_feature_transformer(inputs1, inputs2)))
   return keras.Model(inputs=[inputs1, inputs2], outputs=outputs)
 
-dataset = tf.data.Dataset.from_generator(
+random.seed(datetime.now())
+
+train_dataset = tf.data.Dataset.from_generator(
+  lichess_pgn_data_generator.gen, args=['../train/lichess_db_standard_rated_2017-02.pgn'],
+  output_types=((tf.float32, tf.float32), tf.float32)
+)
+
+test_dataset = tf.data.Dataset.from_generator(
   lichess_pgn_data_generator.gen, args=['../train/lichess_db_standard_rated_2017-02.pgn'],
   output_types=((tf.float32, tf.float32), tf.float32)
 )
@@ -56,10 +64,10 @@ model = build_model()
 logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = keras.callbacks.TensorBoard(
   log_dir=logdir,
-  histogram_freq=200
+  update_freq=100
 )
 
-opt = keras.optimizers.Adam(learning_rate=0.1)
+opt = keras.optimizers.Adadelta()
 model.compile(
   optimizer=opt,
   loss='mse',
@@ -72,6 +80,16 @@ model.compile(
 keras.utils.plot_model(model, show_shapes=True, show_layer_names=True, to_file='model.png')
 
 model.fit(
-  dataset.batch(32),
-  callbacks=[tensorboard_callback]
+  train_dataset.batch(32),
+  callbacks=[tensorboard_callback],
+)
+"""
+validation_data=test_dataset.batch(8),
+steps_per_epoch=128,
+validation_steps=8,
+epochs=50
+"""
+
+print(
+  model.predict(test_dataset.batch(8), steps=32)
 )
