@@ -52,7 +52,7 @@ def make_halfkp_index(is_white_pov: bool, king_sq: int, sq: int, p: chess.Piece)
     return orient(is_white_pov, sq) + PieceSquare.from_piece(p, is_white_pov) + PieceSquare.END * king_sq
 
 def get_halfkp_indeces(board: chess.Board):
-    result = [np.zeros([41024]), np.zeros([41024])]
+    result = np.zeros([2, 41024])
     for turn in [board.turn, not board.turn]:
         for sq, p in board.piece_map().items():
             if p.piece_type == chess.KING:

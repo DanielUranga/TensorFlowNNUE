@@ -26,7 +26,7 @@ def build_model_inputs():
 
 def build_feature_transformer(inputs1, inputs2):
   ft_dense_layer = layers.Dense(FEATURE_TRANSFORMER_HALF_DIMENSIONS, name='feature_transformer')
-  clipped_relu = layers.ReLU(max_value=127)
+  clipped_relu = layers.ReLU(max_value=127.0)
   transformed1 = clipped_relu(ft_dense_layer(inputs1))
   transformed2 = clipped_relu(ft_dense_layer(inputs2))
   return tf.keras.layers.Concatenate()([transformed1, transformed2])
@@ -34,8 +34,8 @@ def build_feature_transformer(inputs1, inputs2):
 def build_hidden_layers(inputs):
   hidden_layer_1 = layers.Dense(DENSE_LAYERS_WIDTH, name='hidden_layer_1')
   hidden_layer_2 = layers.Dense(DENSE_LAYERS_WIDTH, name='hidden_layer_2')
-  activation_1 = layers.ReLU(max_value=127.0)
-  activation_2 = layers.ReLU(max_value=127.0)
+  activation_1 = layers.ReLU(max_value=1.0)
+  activation_2 = layers.ReLU(max_value=1.0)
   return activation_2(hidden_layer_2(activation_1(hidden_layer_1(inputs))))
 
 def build_output_layer(inputs):
@@ -64,7 +64,8 @@ model = build_model()
 logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = keras.callbacks.TensorBoard(
   log_dir=logdir,
-  update_freq=100
+  update_freq=100,
+  histogram_freq=1,
 )
 
 opt = keras.optimizers.Adadelta()
@@ -82,14 +83,8 @@ keras.utils.plot_model(model, show_shapes=True, show_layer_names=True, to_file='
 model.fit(
   train_dataset.batch(32),
   callbacks=[tensorboard_callback],
-)
-"""
-validation_data=test_dataset.batch(8),
-steps_per_epoch=128,
-validation_steps=8,
-epochs=50
-"""
-
-print(
-  model.predict(test_dataset.batch(8), steps=32)
+  validation_data=test_dataset.batch(8),
+  steps_per_epoch=256,
+  validation_steps=8,
+  epochs=100
 )

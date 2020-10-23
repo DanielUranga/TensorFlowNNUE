@@ -50,4 +50,4 @@ def gen(pgn_file_path):
         X = get_halfkp_indeces(board)
         # y = game_value_for_white if board.turn == chess.WHITE else -game_value_for_white
         # y = eval if board.turn == chess.WHITE else -eval
-        yield (X[0], X[1]), eval / 64
+        yield (X[0], X[1]), int(eval) / 100
