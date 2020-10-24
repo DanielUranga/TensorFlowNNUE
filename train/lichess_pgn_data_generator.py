@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import keras
 import chess
 import chess.pgn
 import random
@@ -9,6 +8,9 @@ import random
 from halfkp import get_halfkp_indeces
 
 GAMES_PER_EPOCH = 1_000
+
+def centipawn_to_wincp(cp_score):
+  return 2 / (1 + np.math.exp(-0.004 * cp_score)) - 1
 
 def gen(pgn_file_path):
   with open(pgn_file_path) as pgn:
@@ -50,4 +52,4 @@ def gen(pgn_file_path):
         X = get_halfkp_indeces(board)
         # y = game_value_for_white if board.turn == chess.WHITE else -game_value_for_white
         # y = eval if board.turn == chess.WHITE else -eval
-        yield (X[0], X[1]), int(eval) / 100
+        yield (X[0], X[1]), centipawn_to_wincp(eval)
