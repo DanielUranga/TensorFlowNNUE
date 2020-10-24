@@ -21,12 +21,12 @@ FEATURE_TRANSFORMER_HALF_DIMENSIONS = 256
 DENSE_LAYERS_WIDTH = 32
 
 def build_model_inputs():
-  # return keras.Input(shape=(41024,), sparse=True), keras.Input(shape=(41024,), sparse=True)
-  return keras.Input(shape=(41024,)), keras.Input(shape=(41024,))
+  return keras.Input(shape=(41024,), sparse=True), keras.Input(shape=(41024,), sparse=True)
+  # return keras.Input(shape=(41024,)), keras.Input(shape=(41024,))
 
 def build_feature_transformer(inputs1, inputs2):
   ft_dense_layer = layers.Dense(FEATURE_TRANSFORMER_HALF_DIMENSIONS, name='feature_transformer')
-  clipped_relu = layers.ReLU(max_value=127.0)
+  clipped_relu = layers.ReLU(max_value=1.0)
   transformed1 = clipped_relu(ft_dense_layer(inputs1))
   transformed2 = clipped_relu(ft_dense_layer(inputs2))
   return tf.keras.layers.Concatenate()([transformed1, transformed2])
@@ -51,12 +51,12 @@ random.seed(datetime.now())
 
 train_dataset = tf.data.Dataset.from_generator(
   lichess_pgn_data_generator.gen, args=['../train/lichess_db_standard_rated_2017-02.pgn'],
-  output_types=((tf.float32, tf.float32), tf.float32)
+  output_signature=((tf.SparseTensorSpec((41024,)), tf.SparseTensorSpec((41024,))), tf.TensorSpec(()))
 )
 
 test_dataset = tf.data.Dataset.from_generator(
   lichess_pgn_data_generator.gen, args=['../train/lichess_db_standard_rated_2017-02.pgn'],
-  output_types=((tf.float32, tf.float32), tf.float32)
+  output_signature=((tf.SparseTensorSpec((41024,)), tf.SparseTensorSpec((41024,))), tf.TensorSpec(()))
 )
 
 model = build_model()

@@ -2,8 +2,10 @@ import chess
 from enum import Enum
 from enum import IntFlag
 import numpy as np
+import tensorflow as tf
 
 SQUARE_NB = 64
+
 
 class PieceSquare(IntFlag):
     NONE = 0,
@@ -43,20 +45,28 @@ class PieceSquare(IntFlag):
             }
         }[p.color == is_white_pov][p.piece_type]
 
+
 def orient(is_white_pov: bool, sq: int):
     # Use this one for "flip" instead of "rotate"
     # return (chess.A8 * (not is_white_pov)) ^ sq
     return (63 * (not is_white_pov)) ^ sq
 
+
 def make_halfkp_index(is_white_pov: bool, king_sq: int, sq: int, p: chess.Piece):
     return orient(is_white_pov, sq) + PieceSquare.from_piece(p, is_white_pov) + PieceSquare.END * king_sq
 
+# Returns SparseTensors
 def get_halfkp_indeces(board: chess.Board):
-    result = np.zeros([2, 41024])
+    result = []
     for turn in [board.turn, not board.turn]:
+        indices = []
+        values = []
         for sq, p in board.piece_map().items():
             if p.piece_type == chess.KING:
                 continue
-            turn_idx = 0 if turn == chess.WHITE else 1
-            result[turn_idx][make_halfkp_index(turn, orient(turn, board.king(turn)), sq, p)] = 1
+            indices.append([make_halfkp_index(
+                turn, orient(turn, board.king(turn)), sq, p)])
+            values.append(1.0)
+        result.append(tf.sparse.reorder(tf.sparse.SparseTensor(
+            indices=indices, values=values, dense_shape=[41024])))
     return result
