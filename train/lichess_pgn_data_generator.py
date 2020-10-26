@@ -48,8 +48,12 @@ def gen(pgn_file_path):
           break
         eval = eval.pov(not board.turn).score()
         if not eval:
-          break
-        X = get_halfkp_indeces(board)
+          continue
+        try:
+          X = get_halfkp_indeces(board)
+        except:
+          print(f'Would have crashed: {board}')
+          continue
         # y = game_value_for_white if board.turn == chess.WHITE else -game_value_for_white
         # y = eval if board.turn == chess.WHITE else -eval
-        yield (X[0], X[1]), centipawn_to_wincp(eval)
+        yield (X[0], X[1]), eval / 100
